@@ -1,1558 +1,624 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>LAST WAR 2 - MINECRAFT GARDEN WARRIOR</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIBE - Created by Muhammad Taqi</title>
+    <link rel="icon" type="image/png" href="icon.png">
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-            -webkit-user-select: none;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        body,
-        html {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #0a0f1a;
-            color: #fff;
-            touch-action: none;
-        }
-        #game-canvas {
-            width: 100vw;
-            height: 100vh;
-            display: block;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Helvetica, Arial, sans-serif; }
+        body { background: #f0f2f5; color: #111b21; height: 100vh; display: flex; justify-content: center; align-items: center; }
+        .clickable-icon { cursor: pointer; transition: transform 0.2s; }
+        .clickable-icon:hover { transform: scale(1.05); }
 
-        /* Force Landscape Overlay for Mobile */
-        #portrait-warning {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: #090a0f;
-            color: #ff4757;
-            z-index: 99999;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 20px;
-        }
-        @media screen and (orientation: portrait) {
-            #portrait-warning {
-                display: flex;
-            }
-        }
+        /* Auth Screens */
+        .auth-container { width: 100%; max-width: 400px; background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); text-align: center; }
+        .auth-screen { display: none; }
+        .auth-screen.active { display: block; }
+        .app-logo { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; margin-bottom: 12px; }
+        .auth-container h1 { color: #00a884; font-size: 28px; font-weight: 700; letter-spacing: 1px; }
+        .auth-container .subtitle { font-size: 13px; color: #667781; margin-bottom: 25px; font-weight: 600; }
+        .auth-input { width: 100%; padding: 12px 14px; margin-bottom: 15px; border: 1px solid #e9edef; border-radius: 8px; font-size: 14px; background: #f8f9fa; outline: none; }
+        .auth-input:focus { border-color: #00a884; background: #fff; }
+        .btn-primary { width: 100%; padding: 12px; background: #00a884; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px; margin-bottom: 10px; }
+        .btn-primary:hover { background: #008f6f; }
+        .btn-secondary { background: #e9edef; color: #111b21; }
+        .btn-secondary:hover { background: #d1d7db; }
+        .auth-link { color: #00a884; cursor: pointer; font-size: 14px; }
+        .auth-link:hover { text-decoration: underline; }
+        .credentials-box { background: #f0f2f5; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: left; }
+        .credentials-box p { margin: 5px 0; font-size: 14px; }
+        .credentials-box span { font-weight: 600; color: #111b21; }
 
-        #hud {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 10;
-            display: none;
-        }
-        .interactive {
-            pointer-events: auto;
-        }
+        /* Main App Layout */
+        .app-layout { width: 100vw; height: 100vh; display: flex; background: #fff; overflow: hidden; position: relative; }
 
-        #minimap-container {
-            position: absolute;
-            top: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 110px;
-            height: 110px;
-            background: rgba(15, 23, 42, 0.85);
-            border: 2px solid #38bdf8;
-            border-radius: 50%;
-            overflow: hidden;
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
-        }
-        #minimap-canvas {
-            width: 100%;
-            height: 100%;
-        }
+        /* Sidebar */
+        .sidebar { width: 380px; border-right: 1px solid #e9edef; display: flex; flex-direction: column; background: #ffffff; flex-shrink: 0; }
+        .sidebar-header { height: 60px; background: #f0f2f5; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e9edef; }
+        .user-brand { display: flex; align-items: center; gap: 10px; }
+        .header-logo { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+        .profile-info { display: flex; flex-direction: column; }
+        .profile-name { font-weight: 700; font-size: 15px; color: #111b21; }
+        .profile-id { font-size: 11px; color: #667781; }
+        .header-actions { display: flex; gap: 18px; color: #54656f; font-size: 18px; cursor: pointer; }
+        .header-actions i:hover { color: #00a884; }
 
-        #branding {
-            position: absolute;
-            top: 15px;
-            left: 20px;
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(8px);
-            padding: 8px 16px;
-            border-radius: 8px;
-            border: 1px solid rgba(56, 189, 248, 0.3);
-            cursor: pointer;
-            transition: transform 0.2s ease;
-        }
-        #branding:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 20px rgba(56, 189, 248, 0.6);
-        }
-        #branding h1 {
-            margin: 0;
-            font-size: 1.1rem;
-            color: #38bdf8;
-            letter-spacing: 1px;
-        }
-        #branding span {
-            color: #2ed573;
-            font-size: 0.75rem;
-            font-weight: bold;
-        }
+        .search-box { padding: 8px 12px; background: #ffffff; border-bottom: 1px solid #e9edef; }
+        .search-input { width: 100%; padding: 8px 12px 8px 35px; border-radius: 8px; border: none; background: #f0f2f5; font-size: 13px; outline: none; }
+        .search-wrapper { position: relative; }
+        .search-wrapper i { position: absolute; left: 12px; top: 10px; color: #54656f; font-size: 12px; }
 
-        #creator-credit {
-            position: absolute;
-            bottom: 15px;
-            right: 20px;
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(8px);
-            padding: 6px 14px;
-            border-radius: 6px;
-            border: 1px solid rgba(46, 213, 115, 0.4);
-            cursor: pointer;
-            font-size: 0.8rem;
-            color: #2ed573;
-            font-weight: bold;
-            letter-spacing: 0.5px;
-            transition: transform 0.2s ease;
-            z-index: 15;
-        }
-        #creator-credit:hover {
-            transform: scale(1.08);
-            box-shadow: 0 0 18px rgba(46, 213, 115, 0.6);
-        }
+        .contacts-list { flex: 1; overflow-y: auto; }
+        .contact-item { display: flex; align-items: center; padding: 12px 16px; cursor: pointer; border-bottom: 1px solid #f5f6f6; transition: background 0.2s; }
+        .contact-item:hover, .contact-item.active { background: #f0f2f5; }
+        .avatar { width: 42px; height: 42px; border-radius: 50%; background: #00a884; color: white; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 16px; margin-right: 12px; flex-shrink: 0; overflow: hidden; }
+        .contact-details { flex: 1; overflow: hidden; }
+        .contact-title { display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; color: #111b21; }
+        .last-msg { font-size: 12px; color: #667781; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
 
-        #stats-bar {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(8px);
-            padding: 10px 16px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            text-align: right;
-        }
-        #hp-container {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: #2ed573;
-        }
-        #star-container {
-            font-size: 1rem;
-            color: #ffea00;
-            font-weight: bold;
-            margin-top: 2px;
-        }
+        /* Right Chat Panel */
+        .main-chat { flex: 1; display: flex; flex-direction: column; background: #efeae2; position: relative; width: 100%; }
+        .chat-header { height: 60px; background: #f0f2f5; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e9edef; }
+        .chat-header-user { display: flex; align-items: center; gap: 12px; }
+        .back-btn { font-size: 18px; color: #54656f; cursor: pointer; padding: 5px; }
+        .back-btn:hover { color: #00a884; }
+        .chat-header-actions { display: flex; gap: 10px; }
+        .chat-action-btn { background: #ea4335; color: white; border: none; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+        .chat-action-btn.secondary { background: #54656f; }
+        .chat-action-btn:hover { opacity: 0.9; }
 
-        #match-info {
-            position: absolute;
-            top: 135px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(15, 23, 42, 0.9);
-            border: 1px solid #38bdf8;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            text-align: center;
-            color: #38bdf8;
-            font-weight: bold;
-            width: max-content;
-        }
+        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .msg-bubble { max-width: 65%; padding: 8px 12px; border-radius: 8px; font-size: 14px; line-height: 19px; position: relative; word-wrap: break-word; box-shadow: 0 1px 0.5px rgba(11,20,26,0.13); }
+        .msg-bubble.me { background: #d9fdd3; align-self: flex-end; border-top-right-radius: 0; }
+        .msg-bubble.them { background: #ffffff; align-self: flex-start; border-top-left-radius: 0; }
+        .msg-bubble img, .msg-bubble video { max-width: 100%; max-height: 250px; border-radius: 8px; margin-bottom: 4px; display: block; }
+        .msg-time { font-size: 10px; color: #667781; text-align: right; margin-top: 2px; }
 
-        #armory {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(15, 23, 42, 0.95);
-            border: 2px solid #ff4757;
-            padding: 20px;
-            border-radius: 10px;
-            width: 340px;
-            text-align: center;
-            display: none;
-            z-index: 20;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-        }
-        .gun-btn {
-            background: #1e293b;
-            border: 1px solid #334155;
-            color: white;
-            padding: 10px;
-            margin: 5px 0;
-            width: 100%;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .gun-btn:hover {
-            background: #ff4757;
-        }
+        .chat-footer { height: 62px; background: #f0f2f5; padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
+        .message-input { flex: 1; padding: 11px 16px; border: none; border-radius: 8px; font-size: 14px; outline: none; background: #ffffff; }
+        .media-btn { color: #54656f; font-size: 20px; cursor: pointer; padding: 5px; }
+        .media-btn:hover { color: #00a884; }
+        .send-btn { background: #00a884; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; }
 
-        #joystick-zone {
-            position: absolute;
-            bottom: 30px;
-            left: 30px;
-            width: 130px;
-            height: 130px;
-            background: rgba(15, 23, 42, 0.85);
-            border: 2px solid rgba(56, 189, 248, 0.4);
-            border-radius: 50%;
-            touch-action: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        #joystick-knob {
-            width: 45px;
-            height: 45px;
-            background: #38bdf8;
-            border-radius: 50%;
-            box-shadow: 0 0 15px #38bdf8;
-            position: absolute;
-            pointer-events: none;
-        }
+        .empty-chat { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #f0f2f5; color: #667781; text-align: center; }
+        .empty-chat img { width: 100px; height: 100px; margin-bottom: 15px; border-radius: 50%; }
 
-        #btn-jump {
-            position: absolute;
-            bottom: 175px;
-            left: 65px;
-            width: 60px;
-            height: 40px;
-            background: rgba(15, 23, 42, 0.85);
-            border: 1px solid #2ed573;
-            color: #2ed573;
-            border-radius: 20px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 0 10px rgba(46, 213, 115, 0.3);
-        }
+        /* Full Screen Toggle Classes */
+        .app-layout.full-chat .sidebar { display: none; }
+        .app-layout.full-chat .main-chat { display: flex; width: 100%; }
 
-        #touch-look-zone {
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 50vw;
-            height: 100vh;
-            touch-action: none;
-        }
-
-        #btn-fire {
-            position: absolute;
-            bottom: 40px;
-            right: 40px;
-            width: 80px;
-            height: 80px;
-            background: rgba(255, 71, 87, 0.85);
-            border: 3px solid #ff6b81;
-            border-radius: 50%;
-            color: white;
-            font-weight: bold;
-            font-size: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 0 20px rgba(255, 71, 87, 0.5);
-            cursor: pointer;
-        }
-        #btn-scope {
-            position: absolute;
-            bottom: 135px;
-            right: 50px;
-            width: 55px;
-            height: 55px;
-            background: rgba(52, 152, 219, 0.8);
-            border: 2px solid #54a0ff;
-            border-radius: 50%;
-            color: white;
-            font-weight: bold;
-            font-size: 0.8rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-
-        #sens-container {
-            position: absolute;
-            bottom: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(15, 23, 42, 0.85);
-            padding: 6px 14px;
-            border-radius: 6px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            font-size: 0.8rem;
-        }
-
-        #crosshair {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 12px;
-            height: 12px;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-            z-index: 8;
-        }
-        #crosshair::before,
-        #crosshair::after {
-            content: '';
-            position: absolute;
-            background: #38bdf8;
-        }
-        #crosshair::before {
-            top: 5px;
-            left: -8px;
-            width: 28px;
-            height: 2px;
-        }
-        #crosshair::after {
-            top: -8px;
-            left: 5px;
-            width: 2px;
-            height: 28px;
-        }
-
-        #scope-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: radial-gradient(circle, transparent 30%, black 70%);
-            display: none;
-            pointer-events: none;
-            z-index: 9;
-        }
-
-        #damage-flash {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 0, 0, 0);
-            pointer-events: none;
-            transition: background 0.1s ease;
-            z-index: 9;
-        }
-        #damage-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 12;
-        }
-        .damage-popup {
-            position: absolute;
-            font-weight: 900;
-            font-size: 22px;
-            color: #ffea00;
-            text-shadow: 0 0 6px #000, 2px 2px 0px #000;
-            animation: floatUp 0.8s ease-out forwards;
-        }
-        .damage-headshot {
-            color: #ff0055;
-            font-size: 30px;
-            text-shadow: 0 0 10px #ff0055;
-        }
-        @keyframes floatUp {
-            0% {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-40px) scale(1.2);
-            }
-        }
-
-        .modal-backdrop {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(5, 7, 15, 0.95);
-            backdrop-filter: blur(12px);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-        }
-        .card {
-            background: rgba(15, 23, 42, 0.95);
-            border: 1px solid #38bdf855;
-            box-shadow: 0 0 35px rgba(56, 189, 248, 0.25);
-            border-radius: 12px;
-            padding: 24px;
-            width: 90%;
-            max-width: 780px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-        .btn {
-            background: linear-gradient(135deg, #38bdf8, #2563eb);
-            border: none;
-            color: #fff;
-            font-weight: bold;
-            padding: 10px 18px;
-            border-radius: 6px;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 15px #38bdf888;
-        }
-        .grid-options {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-            gap: 8px;
-        }
-        .option-card {
-            background: #0f172a;
-            border: 1px solid #1e293b;
-            padding: 8px;
-            border-radius: 6px;
-            cursor: pointer;
-            text-align: center;
-            font-size: 0.85rem;
-        }
-        .option-card.active {
-            border-color: #38bdf8;
-            background: rgba(56, 189, 248, 0.15);
-        }
-        .mp-input {
-            background: #0f172a;
-            border: 1px solid #38bdf8;
-            color: #fff;
-            padding: 10px;
-            border-radius: 6px;
-            outline: none;
-            text-align: center;
-            font-weight: bold;
-        }
-        .mc-link-btn {
-            background: rgba(46, 213, 115, 0.15);
-            border: 1px solid #2ed573;
-            color: #2ed573;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 0.85rem;
-            transition: all 0.2s;
-        }
-        .mc-link-btn:hover {
-            background: rgba(46, 213, 115, 0.3);
-            box-shadow: 0 0 15px rgba(46, 213, 115, 0.5);
-        }
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(11,20,26,0.4); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: #ffffff; width: 360px; padding: 24px; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.15); }
+        .modal-header { font-size: 18px; font-weight: 600; color: #111b21; margin-bottom: 15px; }
     </style>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">
-    </script>
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js">
-    </script>
 </head>
 <body>
 
-    <div id="portrait-warning">
-        <h2>🔄 PLEASE ROTATE YOUR DEVICE</h2>
-        <p style="margin-top: 10px; color: #94a3b8;">LAST WAR 2 khelne ke liye screen landscape karein.</p>
+    <!-- AUTH AREA -->
+    <!-- Selection Screen -->
+    <div class="auth-container auth-screen active" id="selectionScreen">
+        <a href="https://taqi.oneapp.dev" target="_blank" title="Visit taqi.oneapp.dev">
+            <img src="icon.png" alt="VIBE Icon" class="app-logo clickable-icon">
+        </a>
+       <a href="1.html" class="royal-btn">OFFLINE GAMES</a>
+        <h1>VIBE</h1>
+        <p class="subtitle">CREATED BY MUHAMMAD TAQI</p>
+        <button class="btn-primary" onclick="showCreateAccount()">Create New Account</button>
+        <button class="btn-primary btn-secondary" onclick="showLogin()">Login</button>
+        <a href="1.html" class="royal-btn">OFFLINE GAMES</a>
+
     </div>
 
-    <div id="damage-flash"></div>
-    <div id="crosshair"></div>
-    <div id="scope-overlay"></div>
-    <div id="damage-container"></div>
-    <canvas id="game-canvas"></canvas>
-
-    <div id="hud">
-        <div id="branding" class="interactive" onclick="window.open('https://taqi.oneapp.dev','_blank')">
-            <h1>LAST WAR 2</h1>
-            <span>MINECRAFT GARDEN ARENA</span>
+    <!-- Create Account Screen -->
+    <div class="auth-container auth-screen" id="createAccountScreen">
+        <a href="https://taqi.oneapp.dev" target="_blank" title="Visit taqi.oneapp.dev">
+            <img src="icon.png" alt="VIBE Icon" class="app-logo clickable-icon">
+        </a>
+        <h1>Create Account</h1>
+        <p class="subtitle">Enter your name to get a random ID and password</p>
+        <div id="createAccountForm">
+            <input type="text" id="createNameInput" class="auth-input" placeholder="Your Name" maxlength="20">
+            <button class="btn-primary" onclick="createAccount()">Create Account</button>
         </div>
-
-        <div id="minimap-container">
-            <canvas id="minimap-canvas"></canvas>
+        <div id="accountCreatedInfo" style="display: none;">
+            <div class="credentials-box">
+                <p>Your ID: <span id="generatedIdDisplay"></span></p>
+                <p>Your Password: <span id="generatedPasswordDisplay"></span></p>
+            </div>
+            <p style="font-size: 12px; color: #667781; margin: 10px 0;">Save these credentials securely!</p>
+            <button class="btn-primary" onclick="continueToApp()">Continue to Chat</button>
         </div>
-
-        <div id="match-info">
-            ROUND: <span id="current-round-text">1</span>/10 | TARGET: <span id="target-score-text">10 KILLS</span> | KILLS: <span id="my-kills">0</span>
-        </div>
-
-        <div id="stats-bar" class="interactive">
-            <div id="hp-container">HP: <span id="hp-val">200</span> / 200</div>
-            <div id="star-container">⭐ Stars: <span id="star-count-text">0</span></div>
-            <div style="font-size: 0.8rem; color: #2ed573; margin-top:2px;" id="current-gun-text">Gun: AK47</div>
-            <button class="interactive" style="margin-top:4px; padding:3px 8px; background:#ff4757; border:none; color:white; border-radius:4px; cursor:pointer;" onclick="toggleArmory()">Change Gun</button>
-        </div>
-
-        <div id="armory" class="interactive">
-            <h3 style="color:#ff4757; margin-bottom:10px;">Select Weapon - LAST WAR 2</h3>
-            <button class="gun-btn" onclick="selectWeapon('AK47')">AK47 (Rate: 0.4s | Body: 35)</button>
-            <button class="gun-btn" onclick="selectWeapon('MP5')">MP5 (Rate: 0.2s | Body: 22)</button>
-            <button class="gun-btn" onclick="selectWeapon('AWM')">AWM (Rate: 1.8s | Body: 110)</button>
-            <button class="gun-btn" onclick="selectWeapon('DEAGLE')">Desert Eagle (Rate: 0.6s | Body: 50)</button>
-            <button class="gun-btn" onclick="selectWeapon('MP40')">MP40 (Rate: 0.18s | Body: 24)</button>
-            <button class="interactive" style="background:#334155; border:none; color:white; padding:8px; margin-top:10px; border-radius:4px; width:100%; cursor:pointer;" onclick="toggleArmory()">Close</button>
-        </div>
-
-        <div id="joystick-zone" class="interactive">
-            <div id="joystick-knob"></div>
-        </div>
-        <button class="interactive" id="btn-jump">JUMP</button>
-        <div id="touch-look-zone" class="interactive"></div>
-
-        <div id="sens-container" class="interactive">
-            Sensitivity: <input type="range" id="sens-slider" min="0.2" max="3.0" step="0.1" value="1.0" style="vertical-align:middle; width:80px;">
-        </div>
-
-        <div id="btn-scope" class="interactive">SCOPE</div>
-        <div id="btn-fire" class="interactive">FIRE</div>
-
-        <div id="creator-credit" class="interactive" onclick="window.open('https://taqi.oneapp.dev','_blank')">
-            Created by Muhammad Taqi
-        </div>
+        <p class="auth-link" onclick="showSelection()">← Back</p>
     </div>
 
-    <div id="modal-layer" class="modal-backdrop interactive">
-        <div id="auth-screen" class="card" style="max-width: 420px; text-align: center;">
-            <h1 style="color:#38bdf8; font-size:2rem; letter-spacing:2px;">LAST WAR 2</h1>
-            <p style="color: #94a3b8; font-size: 13px;">Minecraft Garden Arena - Multiplayer 3D Shooter</p>
-            <p style="color:#2ed573; font-size:12px;">Callsign save to local profile.</p>
-            <input type="text" id="player-name-input" placeholder="Callsign..." maxlength="16" class="mp-input" value="Warrior" style="width:100%; margin:10px 0;" />
-            <button class="btn" onclick="saveAuthName()">Save & Launch Profile</button>
-            <div style="margin-top:8px; cursor:pointer;" onclick="window.open('https://taqi.oneapp.dev','_blank')">
-                <span style="color:#2ed573; font-weight:bold; font-size:0.85rem;">Created by Muhammad Taqi</span>
+    <!-- Login Screen -->
+    <div class="auth-container auth-screen" id="loginScreen">
+        <a href="https://taqi.oneapp.dev" target="_blank" title="Visit taqi.oneapp.dev">
+            <img src="icon.png" alt="VIBE Icon" class="app-logo clickable-icon">
+        </a>
+        <h1>Login</h1>
+        <p class="subtitle">Enter your credentials</p>
+        <input type="text" id="loginNameInput" class="auth-input" placeholder="Name (any)" maxlength="20">
+        <input type="text" id="loginIdInput" class="auth-input" placeholder="ID" maxlength="25">
+        <input type="password" id="loginPasswordInput" class="auth-input" placeholder="Password">
+        <button class="btn-primary" onclick="login()">Login</button>
+        <p class="auth-link" onclick="showSelection()">← Back</p>
+    </div>
+
+    <!-- Main Messenger Interface -->
+    <div class="app-layout" id="appLayout" style="display: none;">
+        <!-- Left Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-brand">
+                    <a href="https://taqi.oneapp.dev" target="_blank" title="Visit taqi.oneapp.dev">
+                        <img src="icon.png" class="header-logo clickable-icon" alt="VIBE Icon">
+                    </a>
+                    <div class="profile-info">
+                        <span class="profile-name" id="myProfileName">-</span>
+                        <span class="profile-id" id="myProfileId">ID: -</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <i class="fa-solid fa-gear" title="Settings / Show Password" onclick="showSettings()"></i>
+                    <i class="fa-solid fa-user-plus" title="Add Contact" onclick="openModal()"></i>
+                </div>
             </div>
+            
+            <div class="search-box">
+                <div class="search-wrapper">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" class="search-input" placeholder="Search or start new chat">
+                </div>
+            </div>
+
+            <div class="contacts-list" id="contactsContainer"></div>
         </div>
 
-        <div id="lobby-screen" class="card" style="display: none;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h2 style="color:#38bdf8;">LAST WAR 2 - GARDEN LOBBY</h2>
-                <div>Operative: <strong id="user-display-name" style="color: #38bdf8;">-</strong></div>
+        <!-- Right Chat Panel -->
+        <div class="main-chat">
+            <div id="emptyChatView" class="empty-chat">
+                <a href="https://taqi.oneapp.dev" target="_blank" title="Visit taqi.oneapp.dev">
+                    <img src="icon.png" alt="VIBE Icon" class="clickable-icon">
+                </a>
+                <h2>VIBE Web</h2>
+                <p style="margin-top: 8px; font-size: 14px;">Select a contact or click '+' to add a friend using their ID.</p>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1.8fr 1.2fr; gap: 16px;">
-                <div>
-                    <h4 style="color:#aaa; margin-bottom:8px;">Select Character Avatar</h4>
-                    <div class="grid-options" id="character-options"></div>
-
-                    <h4 style="color:#aaa; margin:14px 0 8px 0;">Game Modes</h4>
-                    <div style="background:#0f172a; padding:12px; border-radius:8px; border:1px solid #1e293b;">
-                        <button class="btn" style="width:100%; margin-bottom:10px; background: linear-gradient(135deg, #2ed573, #10ac84);" onclick="startBotMode()">🤖 BOT MODE (10 Continuous Rounds)</button>
-                        <div style="display:flex; gap:8px; margin-bottom:10px;">
-                            <button class="btn" style="flex:1;" onclick="createRoom()">Host VS Room (5 Rounds)</button>
-                        </div>
-                        <div style="display:flex; gap:8px;">
-                            <input type="text" id="join-room-input" placeholder="4-DIGIT ROOM CODE" class="mp-input" style="flex:1; font-size:12px;" />
-                            <button class="btn" style="background:#38bdf8;" onclick="joinRoom()">Join Room</button>
+            <div id="activeChatView" style="display: none; height: 100%; flex-direction: column;">
+                <div class="chat-header">
+                    <div class="chat-header-user">
+                        <i class="fa-solid fa-arrow-left back-btn" onclick="goBackToContacts()" title="Back to Contacts"></i>
+                        <div class="avatar" id="activeAvatar">?</div>
+                        <div>
+                            <div class="profile-name" id="activeContactName">Friend</div>
+                            <div class="profile-id" id="activeContactId">ID: -</div>
                         </div>
                     </div>
-
-                    <div style="margin-top:12px; text-align:center; cursor:pointer;" onclick="window.open('https://taqi.oneapp.dev','_blank')">
-                        <span style="color:#2ed573; font-weight:bold; font-size:0.85rem;">🔗 taqi.oneapp.dev - Created by Muhammad Taqi</span>
+                    <div class="chat-header-actions">
+                        <button class="chat-action-btn secondary" onclick="deleteChat()" title="Delete all messages with this contact">
+                            <i class="fa-solid fa-broom"></i> Clear Chat
+                        </button>
+                        <button class="chat-action-btn" onclick="deleteContact()" title="Delete contact permanently">
+                            <i class="fa-solid fa-trash"></i> Delete Contact
+                        </button>
                     </div>
                 </div>
 
-                <div style="background:rgba(15,23,42,0.8); border:1px solid #1e293b; padding:12px; border-radius:8px;">
-                    <h4 style="color:#aaa; margin-bottom:8px;">Room Squad (<span id="connected-count">1</span>/4)</h4>
-                    <div id="squad-list-container" style="min-height:80px;"></div>
-                    <div style="margin-top:10px; text-align:center;">
-                        <span style="font-size:11px; color:#38bdf8;" id="room-code-display">Room Code: Not Connected</span>
-                    </div>
+                <div class="chat-messages" id="chatMessages"></div>
+                <div class="chat-footer">
+                    <label for="fileInput" class="media-btn" title="Send Image or Video">
+                        <i class="fa-solid fa-paperclip"></i>
+                    </label>
+                    <input type="file" id="fileInput" accept="image/*,video/*" style="display: none;" onchange="handleFileSelect(event)">
+                    <input type="text" id="messageInput" class="message-input" placeholder="Type a message..." onkeypress="handleKeyPress(event)">
+                    <button class="send-btn" onclick="sendMessage()"><i class="fa-solid fa-paper-plane"></i></button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal for Adding Contact -->
+    <div class="modal" id="addContactModal">
+        <div class="modal-content">
+            <div class="modal-header">Add New Contact</div>
+            <input type="text" id="friendNameInput" class="auth-input" placeholder="Contact Name" maxlength="20">
+            <input type="text" id="friendIdInput" class="auth-input" placeholder="Enter 12-25 Digit ID" maxlength="25">
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button class="btn-primary" style="background: #e9edef; color: #111b21;" onclick="closeModal()">Cancel</button>
+                <button class="btn-primary" onclick="saveContact()">Add & Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">Account Settings</div>
+            <p style="font-size: 14px; margin-bottom: 10px;">Your current password is:</p>
+            <div class="credentials-box">
+                <p><span id="currentPasswordDisplay"></span></p>
+            </div>
+            <button class="btn-primary" onclick="closeSettings()">Close</button>
         </div>
     </div>
 
     <script>
-        const DatabaseManager = {
-            NAME_KEY: 'lastwar2_name_db',
-            STARS_KEY: 'lastwar2_stars_db',
-            getProfile() {
-                const data = localStorage.getItem(this.NAME_KEY);
-                return data ? JSON.parse(data) : null;
-            },
-            saveProfile(name) {
-                const profile = { name, id: 'PLR_' + Math.floor(1000 + Math.random() * 9000) };
-                localStorage.setItem(this.NAME_KEY, JSON.stringify(profile));
-                return profile;
-            },
-            getStars() {
-                return parseInt(localStorage.getItem(this.STARS_KEY) || '0', 10);
-            },
-            addStar() {
-                let current = this.getStars() + 1;
-                localStorage.setItem(this.STARS_KEY, current.toString());
-                return current;
-            },
-            removeStar() {
-                let current = Math.max(0, this.getStars() - 1);
-                localStorage.setItem(this.STARS_KEY, current.toString());
-                return current;
-            }
-        };
+        let currentUser = null;
+        let peer = null;
+        let connections = {};
+        let contacts = [];
+        let messagesDB = {};
+        let activeFriendId = null;
 
-        const WEAPONS = {
-            AK47: { name: 'AK47', fireRate: 0.4, bodyDamage: 35, headMultiplier: 3 },
-            MP5: { name: 'MP5', fireRate: 0.2, bodyDamage: 22, headMultiplier: 3 },
-            AWM: { name: 'AWM', fireRate: 1.8, bodyDamage: 110, headMultiplier: 3 },
-            DEAGLE: { name: 'Desert Eagle', fireRate: 0.6, bodyDamage: 50, headMultiplier: 3 },
-            MP40: { name: 'MP40', fireRate: 0.18, bodyDamage: 24, headMultiplier: 3 }
-        };
+        window.onload = function() {
+            const savedUser = localStorage.getItem('vibe_user');
+            const savedContacts = localStorage.getItem('vibe_contacts');
+            const savedMessages = localStorage.getItem('vibe_messages');
 
-        const CHARACTERS = [
-            { id: 'minecraft_steve', name: 'Steve', type: 'mc', color: 0xFFD700, shirtColor: 0x00CED1 },
-            { id: 'minecraft_alex', name: 'Alex', type: 'mc', color: 0xFFA500, shirtColor: 0x32CD32 },
-            { id: 'ghost', name: 'Ghost', type: 'scifi', color: 0x00f0ff, visor: 0x00ffff },
-            { id: 'viper', name: 'Viper', type: 'scifi', color: 0x00ff88, visor: 0x55ff00 },
-            { id: 'phoenix', name: 'Phoenix', type: 'scifi', color: 0xff5500, visor: 0xffea00 },
-            { id: 'shadow', name: 'Shadow', type: 'scifi', color: 0x9900ff, visor: 0xe056fd }
-        ];
+            if (savedContacts) contacts = JSON.parse(savedContacts);
+            if (savedMessages) messagesDB = JSON.parse(savedMessages);
 
-        let selectedCharacter = CHARACTERS[0];
-        let currentGunKey = 'AK47';
-        let currentUserProfile = null;
-
-        const MAX_HP = 200;
-        let playerHP = MAX_HP;
-        let kills = 0;
-        let winTargetKills = 10;
-        let isGameRunning = false;
-        let gameMode = 'bots';
-        let sensitivity = 1.0;
-        let lastShotTime = 0;
-
-        let currentRound = 1;
-        let maxRounds = 10;
-
-        let peer = null,
-            connections = [],
-            roomCode = "",
-            isHost = false;
-        let remotePlayers = {};
-
-        let scene, camera, renderer;
-        let playerPos = { x: 0, z: 10 };
-        let playerVelY = 0;
-        let isJumping = false;
-        let cameraAngleX = 0,
-            cameraAngleY = 0;
-        let moveState = { forward: 0, right: 0 };
-        let isScoped = false;
-        let botsList = [];
-
-        const roomW = 42,
-            roomL = 38;
-
-        function initAuth() {
-            currentUserProfile = DatabaseManager.getProfile();
-            if (currentUserProfile) {
-                showLobby();
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                initPeer();
             } else {
-                document.getElementById('auth-screen').style.display = 'block';
-                document.getElementById('lobby-screen').style.display = 'none';
+                showSelection();
             }
-        }
-
-        function saveAuthName() {
-            const input = document.getElementById('player-name-input').value.trim();
-            if (!input) return alert('Enter callsign!');
-            currentUserProfile = DatabaseManager.saveProfile(input);
-            showLobby();
-        }
-
-        function showLobby() {
-            document.getElementById('auth-screen').style.display = 'none';
-            document.getElementById('lobby-screen').style.display = 'block';
-            document.getElementById('user-display-name').innerText = currentUserProfile.name;
-            document.getElementById('star-count-text').innerText = DatabaseManager.getStars();
-
-            const charContainer = document.getElementById('character-options');
-            charContainer.innerHTML = '';
-            CHARACTERS.forEach(char => {
-                const div = document.createElement('div');
-                div.className = `option-card ${selectedCharacter.id === char.id ? 'active' : ''}`;
-                div.innerText = char.name;
-                div.onclick = () => { selectedCharacter = char;
-                    showLobby(); };
-                charContainer.appendChild(div);
-            });
-
-            updateSquadUI();
-        }
-
-        function updateSquadUI() {
-            const squadContainer = document.getElementById('squad-list-container');
-            squadContainer.innerHTML = '';
-            const localDiv = document.createElement('div');
-            localDiv.style.cssText =
-                "display:flex; justify-content:space-between; align-items:center; background:#0f172a; padding:6px; margin-bottom:4px; border-radius:4px; font-size:12px;";
-            localDiv.innerHTML = `<span>🟢 ${currentUserProfile.name} (YOU)</span><span style="color:#2ed573;">Local</span>`;
-            squadContainer.appendChild(localDiv);
-            let count = 1;
-            Object.keys(remotePlayers).forEach(id => {
-                count++;
-                const div = document.createElement('div');
-                div.style.cssText =
-                    "display:flex; justify-content:space-between; align-items:center; background:#0f172a; padding:6px; margin-bottom:4px; border-radius:4px; font-size:12px;";
-                div.innerHTML =
-                    `<span>🟢 ${remotePlayers[id].name || id}</span><span style="color:#38bdf8;">Ready</span>`;
-                squadContainer.appendChild(div);
-            });
-            document.getElementById('connected-count').innerText = count;
-        }
-
-        /* ===== MINECRAFT GARDEN TEXTURES ===== */
-        function generateGrassFloorTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 512;
-            canvas.height = 512;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#7ec850';
-            ctx.fillRect(0, 0, 512, 512);
-            for (let i = 0; i < 800; i++) {
-                const g = Math.floor(120 + Math.random() * 40);
-                ctx.fillStyle = `rgb(70, ${g}, 50)`;
-                const x = Math.random() * 512,
-                    y = Math.random() * 512;
-                ctx.fillRect(x, y, 3 + Math.random() * 5, 3 + Math.random() * 5);
-            }
-            ctx.strokeStyle = '#5a9e35';
-            ctx.lineWidth = 2;
-            for (let i = 0; i <= 512; i += 32) {
-                ctx.beginPath();
-                ctx.moveTo(i, 0);
-                ctx.lineTo(i, 512);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(0, i);
-                ctx.lineTo(512, i);
-                ctx.stroke();
-            }
-            const texture = new THREE.CanvasTexture(canvas);
-            texture.wrapS = THREE.RepeatWrapping;
-            texture.wrapT = THREE.RepeatWrapping;
-            return texture;
-        }
-
-        function generateOakPlanksTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 256;
-            canvas.height = 256;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#8B6914';
-            ctx.fillRect(0, 0, 256, 256);
-            ctx.strokeStyle = '#5C4033';
-            ctx.lineWidth = 6;
-            for (let i = 0; i <= 256; i += 64) {
-                ctx.beginPath();
-                ctx.moveTo(i, 0);
-                ctx.lineTo(i, 256);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(0, i);
-                ctx.lineTo(256, i);
-                ctx.stroke();
-            }
-            for (let x = 0; x < 256; x += 8) {
-                ctx.fillStyle = 'rgba(0,0,0,0.05)';
-                ctx.fillRect(x, 0, 2, 256);
-            }
-            const texture = new THREE.CanvasTexture(canvas);
-            texture.wrapS = THREE.RepeatWrapping;
-            texture.wrapT = THREE.RepeatWrapping;
-            return texture;
-        }
-
-        function generateStoneBlockTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 256;
-            canvas.height = 256;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#8a8a8a';
-            ctx.fillRect(0, 0, 256, 256);
-            for (let i = 0; i < 200; i++) {
-                const shade = Math.floor(120 + Math.random() * 60);
-                ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade})`;
-                ctx.fillRect(Math.random() * 250, Math.random() * 250, 8 + Math.random() * 15, 5 + Math.random() *
-                    12);
-            }
-            ctx.strokeStyle = '#555';
-            ctx.lineWidth = 4;
-            for (let i = 0; i <= 256; i += 64) {
-                ctx.beginPath();
-                ctx.moveTo(i, 0);
-                ctx.lineTo(i, 256);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(0, i);
-                ctx.lineTo(256, i);
-                ctx.stroke();
-            }
-            const texture = new THREE.CanvasTexture(canvas);
-            texture.wrapS = THREE.RepeatWrapping;
-            texture.wrapT = THREE.RepeatWrapping;
-            return texture;
-        }
-
-        /* ===== MINECRAFT MODELS ===== */
-        function createGunMesh() {
-            const gunGroup = new THREE.Group();
-            const gunMat = new THREE.MeshStandardMaterial({ color: 0x2d2d2d, metalness: 0.6, roughness: 0.3 });
-            const body = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.14, 0.55), gunMat);
-            const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.28), gunMat);
-            barrel.rotation.x = Math.PI / 2;
-            barrel.position.set(0, 0.02, 0.35);
-            const mag = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.24, 0.09), new THREE
-        .MeshStandardMaterial({ color: 0x1a1a1a }));
-            mag.position.set(0, -0.12, 0.1);
-            mag.rotation.x = -0.2;
-            gunGroup.add(body, barrel, mag);
-            return gunGroup;
-        }
-
-        function createMinecraftCharacterMesh(char) {
-            const group = new THREE.Group();
-            const headColor = char.color || 0xFFD700;
-            const shirtColor = char.shirtColor || 0x00CED1;
-            const headMat = new THREE.MeshStandardMaterial({ color: headColor, roughness: 0.5 });
-            const bodyMat = new THREE.MeshStandardMaterial({ color: shirtColor, roughness: 0.5 });
-            const armMat = new THREE.MeshStandardMaterial({ color: shirtColor, roughness: 0.5 });
-            const legMat = new THREE.MeshStandardMaterial({ color: 0x3d3d3d, roughness: 0.6 });
-
-            const head = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.85, 0.85), headMat);
-            head.position.y = 1.62;
-            head.name = "head";
-            group.add(head);
-
-            const faceMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
-            const face = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.45, 0.08), faceMat);
-            face.position.set(0, 1.58, 0.42);
-            face.name = "head";
-            group.add(face);
-
-            const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.02), new THREE
-        .MeshStandardMaterial({ color: 0x0000ff }));
-            eyeL.position.set(-0.18, 1.62, 0.43);
-            eyeL.name = "head";
-            group.add(eyeL);
-            const eyeR = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.02), new THREE
-        .MeshStandardMaterial({ color: 0x0000ff }));
-            eyeR.position.set(0.18, 1.62, 0.43);
-            eyeR.name = "head";
-            group.add(eyeR);
-            const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.06, 0.02), new THREE
-        .MeshStandardMaterial({ color: 0x8B4513 }));
-            mouth.position.set(0, 1.47, 0.43);
-            mouth.name = "head";
-            group.add(mouth);
-
-            const torso = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.9, 0.42), bodyMat);
-            torso.position.y = 0.95;
-            torso.name = "body";
-            group.add(torso);
-
-            const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.8, 0.3), armMat);
-            leftArm.position.set(-0.5, 0.95, 0);
-            leftArm.name = "body";
-            group.add(leftArm);
-            const rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.8, 0.3), armMat);
-            rightArm.position.set(0.5, 0.95, 0);
-            rightArm.name = "body";
-            group.add(rightArm);
-
-            const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.65, 0.32), legMat);
-            leftLeg.position.set(-0.22, 0.32, 0);
-            leftLeg.name = "body";
-            group.add(leftLeg);
-            const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.65, 0.32), legMat);
-            rightLeg.position.set(0.22, 0.32, 0);
-            rightLeg.name = "body";
-            group.add(rightLeg);
-
-            const gun = createGunMesh();
-            gun.position.set(0.4, 1.05, 0.3);
-            group.add(gun);
-
-            return group;
-        }
-
-        function createSciFiCharacterMesh(armorColorHex, visorColorHex = 0x00ffff) {
-            const group = new THREE.Group();
-            const armorMat = new THREE.MeshStandardMaterial({ color: armorColorHex, roughness: 0.25, metalness: 0.7 });
-            const visorMat = new THREE.MeshStandardMaterial({ color: visorColorHex, emissive: visorColorHex,
-                emissiveIntensity: 0.85 });
-            const helmetBase = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), armorMat);
-            helmetBase.position.y = 1.62;
-            helmetBase.name = "head";
-            group.add(helmetBase);
-            const visor = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.18, 0.12), visorMat);
-            visor.position.set(0, 1.65, 0.28);
-            visor.name = "head";
-            group.add(visor);
-            const chestPlate = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.75, 0.42), armorMat);
-            chestPlate.position.y = 0.95;
-            chestPlate.name = "body";
-            group.add(chestPlate);
-            const gun = createGunMesh();
-            gun.position.set(0.4, 0.95, 0.3);
-            group.add(gun);
-            return group;
-        }
-
-        function createCharacterMesh(char) {
-            if (char && char.type === 'scifi') return createSciFiCharacterMesh(char.color, char.visor);
-            return createMinecraftCharacterMesh(char || CHARACTERS[0]);
-        }
-
-        function createMinecraftContainer(x, z, rotY, isStone = false) {
-            const group = new THREE.Group();
-            const plankTex = generateOakPlanksTexture();
-            const stoneTex = generateStoneBlockTexture();
-            const mat = isStone ?
-                new THREE.MeshStandardMaterial({ map: stoneTex, roughness: 0.85 }) :
-                new THREE.MeshStandardMaterial({ map: plankTex, roughness: 0.8 });
-
-            const blockSize = 2.1;
-            const rows = 2;
-            const cols = 3;
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    const block = new THREE.Mesh(new THREE.BoxGeometry(blockSize, blockSize, blockSize), mat);
-                    block.position.set(c * blockSize - blockSize, r * blockSize + blockSize / 2, 0);
-                    group.add(block);
-                }
-            }
-            group.position.set(x, 0, z);
-            group.rotation.y = rotY || 0;
-            return group;
-        }
-
-        function createMinecraftTree(x, z) {
-            const group = new THREE.Group();
-            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x6B3E11, roughness: 0.9 });
-            const leafMat = new THREE.MeshStandardMaterial({ color: 0x2E8B57, roughness: 0.7, emissive: 0x1a4a2a,
-                emissiveIntensity: 0.15 });
-
-            const trunk = new THREE.Mesh(new THREE.BoxGeometry(1.2, 4.5, 1.2), trunkMat);
-            trunk.position.y = 2.25;
-            group.add(trunk);
-
-            for (let dx = -1; dx <= 1; dx++) {
-                for (let dz = -1; dz <= 1; dz++) {
-                    if (Math.abs(dx) === 1 && Math.abs(dz) === 1 && Math.random() < 0.3) continue;
-                    const leaf = new THREE.Mesh(new THREE.BoxGeometry(2.2, 2.0, 2.2), leafMat);
-                    leaf.position.set(dx * 1.7, 5 + Math.random() * 1.5, dz * 1.7);
-                    leaf.rotation.y = Math.random() * 0.5;
-                    group.add(leaf);
-                }
-            }
-            const topLeaf = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.6, 1.8), leafMat);
-            topLeaf.position.set(0, 6.5, 0);
-            group.add(topLeaf);
-
-            group.position.set(x, 0, z);
-            return group;
-        }
-
-        function createFlower(x, z, colorHex) {
-            const group = new THREE.Group();
-            const stemMat = new THREE.MeshStandardMaterial({ color: 0x228B22, roughness: 0.9 });
-            const petalMat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.6, emissive: colorHex,
-                emissiveIntensity: 0.2 });
-            const stem = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.7, 0.12), stemMat);
-            stem.position.y = 0.35;
-            group.add(stem);
-            const head = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.4, 0.45), petalMat);
-            head.position.y = 0.75;
-            head.rotation.y = Math.random() * 0.5;
-            group.add(head);
-            group.position.set(x, 0, z);
-            return group;
-        }
-
-        /* ===== THREE.JS SETUP ===== */
-        function initScene() {
-            if (scene) return;
-            const canvas = document.getElementById('game-canvas');
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x87CEEB);
-            scene.fog = new THREE.Fog(0x87CEEB, 30, 80);
-
-            camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 200);
-            camera.position.set(0, 1.6, 10);
-
-            renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-            scene.add(new THREE.AmbientLight(0xffffff, 0.9));
-            const sunLight = new THREE.DirectionalLight(0xfff5e0, 1.4);
-            sunLight.position.set(25, 45, 25);
-            sunLight.castShadow = true;
-            sunLight.shadow.mapSize.width = 1024;
-            sunLight.shadow.mapSize.height = 1024;
-            sunLight.shadow.camera.near = 0.5;
-            sunLight.shadow.camera.far = 100;
-            sunLight.shadow.camera.left = -30;
-            sunLight.shadow.camera.right = 30;
-            sunLight.shadow.camera.top = 30;
-            sunLight.shadow.camera.bottom = -30;
-            scene.add(sunLight);
-
-            const floorMat = new THREE.MeshStandardMaterial({ map: generateGrassFloorTexture(), roughness: 0.85 });
-            const floor = new THREE.Mesh(new THREE.PlaneGeometry(roomW, roomL), floorMat);
-            floor.rotation.x = -Math.PI / 2;
-            floor.receiveShadow = true;
-            scene.add(floor);
-
-            const gridHelper = new THREE.GridHelper(roomW, 21, 0x4a8a2a, 0x5a9e35);
-            gridHelper.position.y = 0.02;
-            scene.add(gridHelper);
-
-            const containers = [
-                { x: -10, z: 5, rot: Math.PI / 12, stone: false },
-                { x: 10, z: -5, rot: -Math.PI / 8, stone: true },
-                { x: 0, z: -12, rot: Math.PI / 2, stone: false },
-                { x: -16, z: -4, rot: Math.PI / 5, stone: true },
-                { x: 14, z: 8, rot: -Math.PI / 6, stone: false },
-            ];
-            containers.forEach(c => {
-                const container = createMinecraftContainer(c.x, c.z, c.rot, c.stone);
-                container.traverse(child => {
-                    if (child.isMesh) { child.castShadow = true;
-                        child.receiveShadow = true; }
-                });
-                scene.add(container);
-            });
-
-            const treePositions = [
-                { x: -18, z: -12 }, { x: 18, z: -10 }, { x: -15, z: 13 }, { x: 17, z: 14 },
-                { x: -5, z: -16 }, { x: 5, z: 16 }, { x: -20, z: 2 }, { x: 20, z: -2 },
-            ];
-            treePositions.forEach(t => {
-                const tree = createMinecraftTree(t.x, t.z);
-                tree.traverse(child => {
-                    if (child.isMesh) { child.castShadow = true;
-                        child.receiveShadow = true; }
-                });
-                scene.add(tree);
-            });
-
-            const flowerColors = [0xFF6B6B, 0xFFD93D, 0xFF8C42, 0xDA70D6, 0xFF69B4];
-            for (let i = 0; i < 18; i++) {
-                const fx = (Math.random() - 0.5) * (roomW - 8);
-                const fz = (Math.random() - 0.5) * (roomL - 8);
-                const flower = createFlower(fx, fz, flowerColors[Math.floor(Math.random() * flowerColors.length)]);
-                flower.traverse(child => {
-                    if (child.isMesh) child.castShadow = true;
-                });
-                scene.add(flower);
-            }
-        }
-
-        /* ===== GAME LAUNCH & MODES ===== */
-        function startBotMode() {
-            gameMode = 'bots';
-            maxRounds = 10;
-            currentRound = 1;
-            winTargetKills = 5;
-            document.getElementById('target-score-text').innerText = `${winTargetKills} KILLS`;
-            launchGame();
-            startBotRound();
-        }
-
-        function startBotRound() {
-            respawnPlayer();
-            botsList.forEach(b => scene.remove(b.mesh));
-            botsList = [];
-            for (let i = 0; i < 4; i++) spawnBot(i);
-            updateHUDInfo();
-        }
-
-        function spawnBot(id) {
-            const mesh = createMinecraftCharacterMesh({ color: 0xD3D3D3, shirtColor: 0x8B0000 });
-            const bot = {
-                id: 'bot_' + id + '_' + Date.now() + '_' + Math.random(),
-                mesh: mesh,
-                hp: MAX_HP,
-                x: (Math.random() - 0.5) * 30,
-                z: (Math.random() - 0.5) * 28,
-                weapon: WEAPONS.MP5,
-                lastShotTime: Date.now() + Math.random() * 2000
-            };
-            mesh.position.set(bot.x, 0, bot.z);
-            mesh.traverse(c => { if (c.isMesh) { c.castShadow = true;
-                    c.userData = { botId: bot.id, partName: c.name }; } });
-            scene.add(mesh);
-            botsList.push(bot);
-        }
-
-        function launchGame() {
-            document.getElementById('modal-layer').style.display = 'none';
-            document.getElementById('hud').style.display = 'block';
-            initScene();
-            kills = 0;
-            isGameRunning = true;
-            requestAnimationFrame(gameLoop);
-        }
-
-        function respawnPlayer() {
-            playerHP = MAX_HP;
-            playerPos = { x: (Math.random() - 0.5) * 10, z: 10 };
-            updateHPUI();
-        }
-
-        function updateHUDInfo() {
-            document.getElementById('current-round-text').innerText = currentRound;
-            document.getElementById('my-kills').innerText = kills;
-            document.getElementById('star-count-text').innerText = DatabaseManager.getStars();
-        }
-
-        /* ===== PEERJS MULTIPLAYER ===== */
-        function createRoom() {
-            gameMode = 'vs';
-            maxRounds = 5;
-            currentRound = 1;
-            winTargetKills = 3;
-            document.getElementById('target-score-text').innerText = `${winTargetKills} KILLS`;
-            roomCode = Math.floor(1000 + Math.random() * 9000).toString();
-            peer = new Peer('WARRIOR2-' + roomCode);
-            peer.on('open', () => {
-                document.getElementById('room-code-display').innerText = `ROOM CODE: ${roomCode}`;
-                alert(`Room Created! Code: ${roomCode}`);
-                launchGame();
-                respawnPlayer();
-                updateHUDInfo();
-            });
-            peer.on('connection', conn => setupConnection(conn));
-        }
-
-        function joinRoom() {
-            gameMode = 'vs';
-            maxRounds = 5;
-            currentRound = 1;
-            winTargetKills = 3;
-            document.getElementById('target-score-text').innerText = `${winTargetKills} KILLS`;
-            const code = document.getElementById('join-room-input').value.trim().toUpperCase();
-            if (!code) return alert("Enter Room Code!");
-            peer = new Peer();
-            peer.on('open', () => {
-                const conn = peer.connect('WARRIOR2-' + code);
-                setupConnection(conn);
-                document.getElementById('room-code-display').innerText = `CONNECTED TO: ${code}`;
-                launchGame();
-                respawnPlayer();
-                updateHUDInfo();
-            });
-        }
-
-        function setupConnection(conn) {
-            connections.push(conn);
-            conn.on('open', () => {
-                conn.send({ type: 'join', id: currentUserProfile.id, name: currentUserProfile.name, char: selectedCharacter });
-            });
-            conn.on('data', data => handleNetData(data));
-        }
-
-        function broadcast(data) { connections.forEach(c => { if (c.open) c.send(data); }); }
-
-        function handleNetData(data) {
-            if (data.type === 'join') {
-                remotePlayers[data.id] = { name: data.name, char: data.char, x: 0, z: -10, rotY: 0, hp: MAX_HP, mesh: null };
-                if (scene) spawnRemotePlayerMesh(data.id);
-                updateSquadUI();
-            } else if (data.type === 'pos') {
-                if (!remotePlayers[data.id]) {
-                    remotePlayers[data.id] = { name: data.name, char: data.char, hp: data.hp };
-                    if (scene) spawnRemotePlayerMesh(data.id);
-                }
-                const p = remotePlayers[data.id];
-                p.x = data.x;
-                p.z = data.z;
-                p.rotY = data.rotY;
-                p.hp = data.hp;
-                if (p.mesh) { p.mesh.position.set(data.x, 0, data.z);
-                    p.mesh.rotation.y = data.rotY; }
-            } else if (data.type === 'hit') {
-                if (data.targetId === currentUserProfile.id) {
-                    playerHP = Math.max(0, playerHP - data.damage);
-                    updateHPUI();
-                    triggerDamageEffect();
-                    if (playerHP <= 0) handlePlayerDeath();
-                }
-            }
-        }
-
-        function spawnRemotePlayerMesh(id) {
-            const p = remotePlayers[id];
-            if (!p) return;
-            const mesh = createCharacterMesh(p.char || CHARACTERS[0]);
-            mesh.position.set(p.x || 0, 0, p.z || -10);
-            mesh.traverse(c => { if (c.isMesh) { c.castShadow = true;
-                    c.userData = { remotePlayerId: id, partName: c.name }; } });
-            scene.add(mesh);
-            p.mesh = mesh;
-        }
-
-        /* ===== CONTROLS ===== */
-        window.addEventListener('keydown', (e) => {
-            if (e.code === 'KeyW') moveState.forward = 1;
-            if (e.code === 'KeyS') moveState.forward = -1;
-            if (e.code === 'KeyA') moveState.right = -1;
-            if (e.code === 'KeyD') moveState.right = 1;
-            if (e.code === 'Space' && !isJumping) { playerVelY = 0.22;
-                isJumping = true; }
-        });
-        window.addEventListener('keyup', (e) => {
-            if (e.code === 'KeyW' || e.code === 'KeyS') moveState.forward = 0;
-            if (e.code === 'KeyA' || e.code === 'KeyD') moveState.right = 0;
-        });
-
-        const canvasEl = document.getElementById('game-canvas');
-        canvasEl.addEventListener('click', () => { if (!('ontouchstart' in window)) canvasEl.requestPointerLock(); });
-        document.addEventListener('mousemove', (e) => {
-            if (document.pointerLockElement === canvasEl) {
-                cameraAngleY -= e.movementX * 0.002 * sensitivity;
-                cameraAngleX -= e.movementY * 0.002 * sensitivity;
-                cameraAngleX = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, cameraAngleX));
-            }
-        });
-        window.addEventListener('mousedown', (e) => {
-            if (e.button === 0) executeShoot();
-            if (e.button === 2) toggleScope();
-        });
-        window.addEventListener('contextmenu', e => e.preventDefault());
-
-        const joystickZone = document.getElementById('joystick-zone');
-        const joystickKnob = document.getElementById('joystick-knob');
-        let joystickTouchId = null,
-            joyStartX = 0,
-            joyStartY = 0;
-        joystickZone.addEventListener('touchstart', (e) => {
-            const t = e.changedTouches[0];
-            joystickTouchId = t.identifier;
-            joyStartX = t.clientX;
-            joyStartY = t.clientY;
-        });
-        joystickZone.addEventListener('touchmove', (e) => {
-            for (let t of e.changedTouches) {
-                if (t.identifier === joystickTouchId) {
-                    let dx = t.clientX - joyStartX,
-                        dy = t.clientY - joyStartY;
-                    let dist = Math.min(Math.hypot(dx, dy), 45),
-                        angle = Math.atan2(dy, dx);
-                    let moveX = Math.cos(angle) * dist,
-                        moveY = Math.sin(angle) * dist;
-                    joystickKnob.style.transform = `translate(${moveX}px, ${moveY}px)`;
-                    moveState.right = moveX / 45;
-                    moveState.forward = -moveY / 45;
-                }
-            }
-        });
-        const resetJoystick = () => {
-            joystickTouchId = null;
-            joystickKnob.style.transform = `translate(0px, 0px)`;
-            moveState.forward = 0;
-            moveState.right = 0;
         };
-        joystickZone.addEventListener('touchend', resetJoystick);
-        joystickZone.addEventListener('touchcancel', resetJoystick);
 
-        const touchLookZone = document.getElementById('touch-look-zone');
-        let lookTouchId = null,
-            lastTouchX = 0,
-            lastTouchY = 0;
-        touchLookZone.addEventListener('touchstart', (e) => {
-            const t = e.changedTouches[0];
-            lookTouchId = t.identifier;
-            lastTouchX = t.clientX;
-            lastTouchY = t.clientY;
-        });
-        touchLookZone.addEventListener('touchmove', (e) => {
-            for (let t of e.changedTouches) {
-                if (t.identifier === lookTouchId) {
-                    let dx = t.clientX - lastTouchX,
-                        dy = t.clientY - lastTouchY;
-                    lastTouchX = t.clientX;
-                    lastTouchY = t.clientY;
-                    cameraAngleY -= dx * 0.005 * sensitivity;
-                    cameraAngleX -= dy * 0.005 * sensitivity;
-                    cameraAngleX = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, cameraAngleX));
-                }
-            }
-        });
-
-        document.getElementById('btn-jump').addEventListener('click', () => {
-            if (!isJumping) { playerVelY = 0.22;
-                isJumping = true; }
-        });
-        document.getElementById('btn-fire').addEventListener('click', executeShoot);
-        document.getElementById('btn-scope').addEventListener('click', toggleScope);
-        document.getElementById('sens-slider').addEventListener('input', (e) => sensitivity = parseFloat(e.target
-        .value));
-
-        function toggleScope() {
-            isScoped = !isScoped;
-            camera.fov = isScoped ? 30 : 70;
-            camera.updateProjectionMatrix();
-            document.getElementById('scope-overlay').style.display = isScoped ? 'block' : 'none';
+        // ----- Auth navigation -----
+        function showSelection() {
+            document.querySelectorAll('.auth-screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('selectionScreen').classList.add('active');
         }
 
-        /* ===== SHOOTING & ROUND ENGINE ===== */
-        function executeShoot() {
-            if (!isGameRunning) return;
-            const wpn = WEAPONS[currentGunKey];
-            const now = Date.now();
-            if ((now - lastShotTime) / 1000 < wpn.fireRate) return;
-            lastShotTime = now;
-            const raycaster = new THREE.Raycaster();
-            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+        function showCreateAccount() {
+            document.querySelectorAll('.auth-screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('createAccountScreen').classList.add('active');
+            document.getElementById('createAccountForm').style.display = 'block';
+            document.getElementById('accountCreatedInfo').style.display = 'none';
+        }
 
-            if (gameMode === 'bots') {
-                const botMeshes = [];
-                botsList.forEach(b => b.mesh.traverse(c => { if (c.isMesh) botMeshes.push(c); }));
-                const hits = raycaster.intersectObjects(botMeshes);
-                if (hits.length > 0) {
-                    const hitObj = hits[0].object;
-                    const botId = hitObj.userData.botId;
-                    const isHead = hitObj.userData.partName === "head";
-                    const dmg = isHead ? wpn.bodyDamage * wpn.headMultiplier : wpn.bodyDamage;
-                    const bot = botsList.find(b => b.id === botId);
-                    if (bot) {
-                        bot.hp -= dmg;
-                        showFloatingDamage(hits[0].point, dmg, isHead);
-                        if (bot.hp <= 0) {
-                            kills++;
-                            updateHUDInfo();
-                            scene.remove(bot.mesh);
-                            botsList = botsList.filter(b => b.id !== botId);
-                            if (kills >= winTargetKills) handleRoundWin();
-                            else spawnBot(Math.random());
+        function showLogin() {
+            document.querySelectorAll('.auth-screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('loginScreen').classList.add('active');
+        }
+
+        function hideAllAuthScreens() {
+            document.querySelectorAll('.auth-screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('appLayout').style.display = 'flex';
+        }
+
+        // ----- Password generation based on ID -----
+        function generatePassword(id) {
+            return id.split('').map(d => String.fromCharCode(97 + parseInt(d))).join('');
+        }
+
+        // ----- Generate unique random ID -----
+        function generateUniqueId() {
+            let accounts = JSON.parse(localStorage.getItem('vibe_accounts') || '[]');
+            let usedIds = accounts.map(a => a.id);
+            if (currentUser && currentUser.id) usedIds.push(currentUser.id);
+
+            let length = 12;
+            const maxAttempts = 1000; // safety limit
+            while (true) {
+                const totalPossible = Math.pow(10, length);
+                if (usedIds.length >= totalPossible) {
+                    length++;
+                    continue;
+                }
+                let candidate = '';
+                for (let i = 0; i < length; i++) {
+                    candidate += Math.floor(Math.random() * 10);
+                }
+                if (!usedIds.includes(candidate)) {
+                    return candidate;
+                }
+                // If we somehow exhaust attempts, increase length
+                if (--maxAttempts <= 0) {
+                    length++;
+                    maxAttempts = 1000;
+                }
+            }
+        }
+
+        // ----- Create Account -----
+        function createAccount() {
+            const name = document.getElementById('createNameInput').value.trim();
+            if (!name) return alert('Please enter your name');
+
+            const id = generateUniqueId();
+            const password = generatePassword(id);
+
+            // Save to accounts list
+            let accounts = JSON.parse(localStorage.getItem('vibe_accounts') || '[]');
+            accounts.push({ name, id, password });
+            localStorage.setItem('vibe_accounts', JSON.stringify(accounts));
+
+            // Set current user
+            currentUser = { name, id, password };
+            localStorage.setItem('vibe_user', JSON.stringify(currentUser));
+
+            // Show generated credentials
+            document.getElementById('generatedIdDisplay').innerText = id;
+            document.getElementById('generatedPasswordDisplay').innerText = password;
+            document.getElementById('createAccountForm').style.display = 'none';
+            document.getElementById('accountCreatedInfo').style.display = 'block';
+        }
+
+        function continueToApp() {
+            initPeer();
+        }
+
+        // ----- Login -----
+        function login() {
+            const name = document.getElementById('loginNameInput').value.trim();
+            const id = document.getElementById('loginIdInput').value.trim();
+            const password = document.getElementById('loginPasswordInput').value.trim();
+
+            if (!name) return alert('Please enter your name');
+            if (!id || !password) return alert('Please enter both ID and password');
+
+            const accounts = JSON.parse(localStorage.getItem('vibe_accounts') || '[]');
+            const account = accounts.find(a => a.id === id && a.password === password);
+            if (!account) {
+                return alert('Invalid ID or password');
+            }
+
+            currentUser = { name, id, password }; // use the name entered (any name allowed)
+            localStorage.setItem('vibe_user', JSON.stringify(currentUser));
+            initPeer();
+        }
+
+        // ----- Settings -----
+        function showSettings() {
+            const pwd = currentUser && currentUser.password ? currentUser.password : 'Not set';
+            document.getElementById('currentPasswordDisplay').innerText = pwd;
+            document.getElementById('settingsModal').style.display = 'flex';
+        }
+        function closeSettings() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        // ----- PeerJS initialisation (existing logic) -----
+        function initPeer() {
+            if (peer) peer.destroy();
+
+            peer = new Peer('vibe-' + currentUser.id);
+
+            peer.on('open', () => {
+                hideAllAuthScreens();
+                document.getElementById('myProfileName').innerText = currentUser.name;
+                document.getElementById('myProfileId').innerText = 'ID: ' + currentUser.id;
+                renderContacts();
+            });
+
+            peer.on('connection', (conn) => {
+                const incomingId = conn.peer.replace('vibe-', '');
+                connections[incomingId] = conn;
+
+                conn.on('data', (data) => {
+                    if (data.type === 'chat') {
+                        saveMessage(data.fromId, data.fromName, data.text, 'them', data.msgType, data.mediaUrl);
+                        
+                        if (!contacts.some(c => c.id === data.fromId)) {
+                            contacts.push({ name: data.fromName, id: data.fromId });
+                            localStorage.setItem('vibe_contacts', JSON.stringify(contacts));
+                            renderContacts();
+                        }
+
+                        if (activeFriendId === data.fromId) {
+                            renderMessages();
                         }
                     }
-                }
-            } else {
-                const targetMeshes = [];
-                Object.keys(remotePlayers).forEach(id => {
-                    if (remotePlayers[id].mesh) remotePlayers[id].mesh.traverse(c => { if (c.isMesh) targetMeshes
-                            .push(c); });
                 });
-                const hits = raycaster.intersectObjects(targetMeshes);
-                if (hits.length > 0) {
-                    const hitObj = hits[0].object;
-                    const remoteId = hitObj.userData.remotePlayerId;
-                    const isHead = (hitObj.userData.partName === "head");
-                    const dmg = isHead ? wpn.bodyDamage * wpn.headMultiplier : wpn.bodyDamage;
-                    broadcast({ type: 'hit', targetId: remoteId, damage: dmg });
-                    showFloatingDamage(hits[0].point, dmg, isHead);
+            });
+
+            peer.on('error', (err) => console.error('PeerJS Error:', err));
+        }
+
+        function openModal() { document.getElementById('addContactModal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('addContactModal').style.display = 'none'; }
+
+        function saveContact() {
+            const friendName = document.getElementById('friendNameInput').value.trim();
+            const friendId = document.getElementById('friendIdInput').value.trim();
+
+            if (!friendName) return alert('Enter contact name');
+            if (!/^[0-9]{12,25}$/.test(friendId)) return alert('Enter a valid 12-25 digit ID');
+            if (friendId === currentUser.id) return alert('You cannot add your own ID!');
+
+            if (!contacts.some(c => c.id === friendId)) {
+                contacts.push({ name: friendName, id: friendId });
+                localStorage.setItem('vibe_contacts', JSON.stringify(contacts));
+                renderContacts();
+            }
+
+            closeModal();
+            selectContact(friendId);
+        }
+
+        function renderContacts() {
+            const container = document.getElementById('contactsContainer');
+            container.innerHTML = '';
+
+            contacts.forEach(c => {
+                const userMsgs = messagesDB[c.id] || [];
+                let lastMsg = 'Click to chat';
+                if (userMsgs.length > 0) {
+                    const last = userMsgs[userMsgs.length - 1];
+                    if (last.msgType === 'image') lastMsg = '📷 Photo';
+                    else if (last.msgType === 'video') lastMsg = '🎥 Video';
+                    else lastMsg = last.text;
                 }
-            }
+
+                const item = document.createElement('div');
+                item.className = `contact-item ${activeFriendId === c.id ? 'active' : ''}`;
+                item.onclick = () => selectContact(c.id);
+
+                item.innerHTML = `
+                    <div class="avatar">${c.name.charAt(0).toUpperCase()}</div>
+                    <div class="contact-details">
+                        <div class="contact-title">
+                            <span>${c.name}</span>
+                        </div>
+                        <div class="last-msg">${lastMsg}</div>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
         }
 
-        function handleRoundWin() {
-            if (gameMode === 'vs') {
-                DatabaseManager.addStar();
-                alert(`🏆 Round Won! +1 ⭐ Star Received! (Stars: ${DatabaseManager.getStars()})`);
-            } else {
-                alert(`🏆 Round ${currentRound} Complete!`);
-            }
-            advanceRound();
-        }
+        function selectContact(friendId) {
+            activeFriendId = friendId;
+            const contact = contacts.find(c => c.id === friendId);
 
-        function handlePlayerDeath() {
-            if (gameMode === 'vs') {
-                DatabaseManager.removeStar();
-                alert(`☠️ Defeat in Round! -1 ⭐ Star Lost! (Stars: ${DatabaseManager.getStars()})`);
-            } else {
-                alert(`☠️ DEFEAT in Round ${currentRound}! Respawning for next round...`);
-            }
-            advanceRound();
-        }
+            document.getElementById('emptyChatView').style.display = 'none';
+            document.getElementById('activeChatView').style.display = 'flex';
 
-        function advanceRound() {
-            currentRound++;
-            kills = 0;
-            if (currentRound > maxRounds) {
-                alert(`🎮 Game Set Complete! (${maxRounds} Rounds Played). Returning to Lobby.`);
-                location.reload();
-            } else {
-                if (gameMode === 'bots') startBotRound();
-                else { respawnPlayer();
-                    updateHUDInfo(); }
-            }
-        }
+            document.getElementById('activeAvatar').innerText = contact ? contact.name.charAt(0).toUpperCase() : '?';
+            document.getElementById('activeContactName').innerText = contact ? contact.name : friendId;
+            document.getElementById('activeContactId').innerText = 'ID: ' + friendId;
 
-        function updateHPUI() { document.getElementById('hp-val').innerText = playerHP; }
+            document.getElementById('appLayout').classList.add('full-chat');
 
-        function triggerDamageEffect() {
-            const flash = document.getElementById('damage-flash');
-            flash.style.background = 'rgba(255, 0, 0, 0.4)';
-            setTimeout(() => flash.style.background = 'rgba(255, 0, 0, 0)', 150);
-        }
+            if (!connections[friendId]) {
+                const conn = peer.connect('vibe-' + friendId, { reliable: true });
+                connections[friendId] = conn;
 
-        function showFloatingDamage(point3D, dmg, isHeadshot) {
-            const vector = point3D.clone().project(camera);
-            const x = (vector.x * .5 + .5) * window.innerWidth;
-            const y = (-(vector.y * .5) + .5) * window.innerHeight;
-            const div = document.createElement('div');
-            div.className = `damage-popup ${isHeadshot ? 'damage-headshot' : ''}`;
-            div.innerText = isHeadshot ? `HEADSHOT! -${dmg}` : `-${dmg}`;
-            div.style.left = `${x}px`;
-            div.style.top = `${y}px`;
-            document.getElementById('damage-container').appendChild(div);
-            setTimeout(() => div.remove(), 800);
-        }
-
-        function toggleArmory() {
-            const a = document.getElementById('armory');
-            a.style.display = a.style.display === 'block' ? 'none' : 'block';
-        }
-
-        function selectWeapon(key) {
-            currentGunKey = key;
-            document.getElementById('current-gun-text').innerText = `Gun: ${WEAPONS[key].name}`;
-            toggleArmory();
-        }
-
-        /* ===== MINIMAP ===== */
-        const mmCanvas = document.getElementById('minimap-canvas');
-        const mmCtx = mmCanvas.getContext('2d');
-        mmCanvas.width = 110;
-        mmCanvas.height = 110;
-
-        function drawMinimap() {
-            mmCtx.clearRect(0, 0, 110, 110);
-            mmCtx.fillStyle = '#1a3a1a';
-            mmCtx.fillRect(0, 0, 110, 110);
-            const mapX = (x) => (x + roomW / 2) * (110 / roomW);
-            const mapZ = (z) => (z + roomL / 2) * (110 / roomL);
-
-            mmCtx.fillStyle = '#ff4757';
-            if (gameMode === 'bots') {
-                botsList.forEach(b => {
-                    mmCtx.beginPath();
-                    mmCtx.arc(mapX(b.x), mapZ(b.z), 4, 0, Math.PI * 2);
-                    mmCtx.fill();
-                });
-            } else {
-                Object.keys(remotePlayers).forEach(id => {
-                    const p = remotePlayers[id];
-                    mmCtx.beginPath();
-                    mmCtx.arc(mapX(p.x || 0), mapZ(p.z || 0), 4, 0, Math.PI * 2);
-                    mmCtx.fill();
-                });
-            }
-            mmCtx.fillStyle = '#2ed573';
-            mmCtx.beginPath();
-            mmCtx.arc(mapX(playerPos.x), mapZ(playerPos.z), 5, 0, Math.PI * 2);
-            mmCtx.fill();
-        }
-
-        /* ===== MAIN GAME LOOP ===== */
-        let lastNetSync = 0;
-
-        function gameLoop() {
-            if (!isGameRunning) return;
-            requestAnimationFrame(gameLoop);
-            let speed = 0.12;
-            let cos = Math.cos(cameraAngleY),
-                sin = Math.sin(cameraAngleY);
-            playerPos.x += (moveState.right * cos - moveState.forward * sin) * speed;
-            playerPos.z += (moveState.right * sin + moveState.forward * cos) * speed;
-
-            if (isJumping) {
-                camera.position.y += playerVelY;
-                playerVelY -= 0.015;
-                if (camera.position.y <= 1.6) {
-                    camera.position.y = 1.6;
-                    isJumping = false;
-                    playerVelY = 0;
-                }
-            } else {
-                camera.position.y = 1.6;
-            }
-            camera.position.x = playerPos.x;
-            camera.position.z = playerPos.z;
-            camera.rotation.order = 'YXZ';
-            camera.rotation.y = cameraAngleY;
-            camera.rotation.x = cameraAngleX;
-
-            const now = Date.now();
-            if (gameMode === 'bots') {
-                botsList.forEach(bot => {
-                    bot.mesh.lookAt(playerPos.x, 0, playerPos.z);
-                    const dist = Math.hypot(playerPos.x - bot.x, playerPos.z - bot.z);
-                    if (dist > 4.0) {
-                        const dirX = (playerPos.x - bot.x) / dist;
-                        const dirZ = (playerPos.z - bot.z) / dist;
-                        bot.x += dirX * 0.032;
-                        bot.z += dirZ * 0.032;
-                        bot.mesh.position.set(bot.x, 0, bot.z);
-                    }
-                    if (dist < 22.0 && (now - bot.lastShotTime) > 1200) {
-                        bot.lastShotTime = now;
-                        playerHP = Math.max(0, playerHP - bot.weapon.bodyDamage);
-                        updateHPUI();
-                        triggerDamageEffect();
-                        if (playerHP <= 0) handlePlayerDeath();
+                conn.on('data', (data) => {
+                    if (data.type === 'chat') {
+                        saveMessage(data.fromId, data.fromName, data.text, 'them', data.msgType, data.mediaUrl);
+                        if (activeFriendId === data.fromId) renderMessages();
                     }
                 });
-            } else {
-                if (now - lastNetSync > 50) {
-                    lastNetSync = now;
-                    broadcast({
-                        type: 'pos',
-                        id: currentUserProfile.id,
-                        name: currentUserProfile.name,
-                        char: selectedCharacter,
-                        x: playerPos.x,
-                        z: playerPos.z,
-                        rotY: cameraAngleY,
-                        hp: playerHP
-                    });
-                }
             }
 
-            renderer.render(scene, camera);
-            drawMinimap();
+            renderContacts();
+            renderMessages();
         }
 
-        window.addEventListener('resize', () => {
-            if (!camera || !renderer) return;
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
+        function goBackToContacts() {
+            document.getElementById('appLayout').classList.remove('full-chat');
+        }
 
-        window.onload = initAuth;
+        function sendMessage(msgType = 'text', mediaUrl = null) {
+            const input = document.getElementById('messageInput');
+            const text = msgType === 'text' ? input.value.trim() : '';
+            if ((!text && !mediaUrl) || !activeFriendId) return;
+
+            const payload = {
+                type: 'chat',
+                fromName: currentUser.name,
+                fromId: currentUser.id,
+                text: text,
+                msgType: msgType,
+                mediaUrl: mediaUrl
+            };
+
+            const conn = connections[activeFriendId];
+            if (conn && conn.open) {
+                conn.send(payload);
+            } else {
+                const newConn = peer.connect('vibe-' + activeFriendId, { reliable: true });
+                connections[activeFriendId] = newConn;
+                newConn.on('open', () => {
+                    newConn.send(payload);
+                });
+            }
+
+            saveMessage(activeFriendId, currentUser.name, text, 'me', msgType, mediaUrl);
+            if (msgType === 'text') input.value = '';
+            renderMessages();
+            renderContacts();
+        }
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const base64Data = event.target.result;
+                const isVideo = file.type.startsWith('video');
+                sendMessage(isVideo ? 'video' : 'image', base64Data);
+            };
+            reader.readAsDataURL(file);
+            e.target.value = '';
+        }
+
+        function saveMessage(friendId, senderName, text, type, msgType = 'text', mediaUrl = null) {
+            if (!messagesDB[friendId]) messagesDB[friendId] = [];
+
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            messagesDB[friendId].push({ text, type, time, msgType, mediaUrl });
+            localStorage.setItem('vibe_messages', JSON.stringify(messagesDB));
+        }
+
+        function renderMessages() {
+            const container = document.getElementById('chatMessages');
+            container.innerHTML = '';
+
+            const list = messagesDB[activeFriendId] || [];
+            list.forEach(msg => {
+                const div = document.createElement('div');
+                div.className = `msg-bubble ${msg.type}`;
+                
+                let contentHTML = '';
+                if (msg.msgType === 'image') {
+                    contentHTML += `<img src="${msg.mediaUrl}" alt="Sent Image">`;
+                } else if (msg.msgType === 'video') {
+                    contentHTML += `<video src="${msg.mediaUrl}" controls></video>`;
+                }
+
+                if (msg.text) contentHTML += `<div>${msg.text}</div>`;
+                contentHTML += `<div class="msg-time">${msg.time}</div>`;
+
+                div.innerHTML = contentHTML;
+                container.appendChild(div);
+            });
+
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function deleteChat() {
+            if (!activeFriendId) return;
+            if (confirm("Delete all chat messages with this contact?")) {
+                delete messagesDB[activeFriendId];
+                localStorage.setItem('vibe_messages', JSON.stringify(messagesDB));
+                renderMessages();
+                renderContacts();
+            }
+        }
+
+        function deleteContact() {
+            if (!activeFriendId) return;
+            if (confirm("Permanently delete this contact?")) {
+                contacts = contacts.filter(c => c.id !== activeFriendId);
+                localStorage.setItem('vibe_contacts', JSON.stringify(contacts));
+
+                delete messagesDB[activeFriendId];
+                localStorage.setItem('vibe_messages', JSON.stringify(messagesDB));
+
+                activeFriendId = null;
+                document.getElementById('activeChatView').style.display = 'none';
+                document.getElementById('emptyChatView').style.display = 'flex';
+
+                goBackToContacts();
+                renderContacts();
+            }
+        }
+
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') sendMessage();
+        }
     </script>
 </body>
 </html>
