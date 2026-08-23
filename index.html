@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -109,8 +108,7 @@
         <p class="subtitle">CREATED BY MUHAMMAD TAQI</p>
         <button class="btn-primary" onclick="showCreateAccount()">Create New Account</button>
         <button class="btn-primary btn-secondary" onclick="showLogin()">Login</button>
-        <a href="1.html" class="royal-btn">OFFLINE GAMES</a>
-
+        <a href="1.html" style="display:block; margin-top:10px; color:#00a884; text-decoration:none; font-size:14px; font-weight:600;">OFFLINE GAMES</a>
     </div>
 
     <!-- Create Account Screen -->
@@ -142,8 +140,8 @@
         </a>
         <h1>Login</h1>
         <p class="subtitle">Enter your credentials</p>
-        <input type="text" id="loginNameInput" class="auth-input" placeholder="Name (any)" maxlength="20">
-        <input type="text" id="loginIdInput" class="auth-input" placeholder="ID" maxlength="25">
+        <input type="text" id="loginNameInput" class="auth-input" placeholder="Display Name" maxlength="20">
+        <input type="text" id="loginIdInput" class="auth-input" placeholder="ID (Digits only)" maxlength="25">
         <input type="password" id="loginPasswordInput" class="auth-input" placeholder="Password">
         <button class="btn-primary" onclick="login()">Login</button>
         <p class="auth-link" onclick="showSelection()">← Back</p>
@@ -296,6 +294,7 @@
 
         // ----- Password generation based on ID -----
         function generatePassword(id) {
+            if(!/^\d+$/.test(id)) return ""; // Must contain digits only
             return id.split('').map(d => String.fromCharCode(97 + parseInt(d))).join('');
         }
 
@@ -306,13 +305,8 @@
             if (currentUser && currentUser.id) usedIds.push(currentUser.id);
 
             let length = 12;
-            const maxAttempts = 1000; // safety limit
+            let maxAttempts = 1000;
             while (true) {
-                const totalPossible = Math.pow(10, length);
-                if (usedIds.length >= totalPossible) {
-                    length++;
-                    continue;
-                }
                 let candidate = '';
                 for (let i = 0; i < length; i++) {
                     candidate += Math.floor(Math.random() * 10);
@@ -320,7 +314,6 @@
                 if (!usedIds.includes(candidate)) {
                     return candidate;
                 }
-                // If we somehow exhaust attempts, increase length
                 if (--maxAttempts <= 0) {
                     length++;
                     maxAttempts = 1000;
@@ -336,16 +329,13 @@
             const id = generateUniqueId();
             const password = generatePassword(id);
 
-            // Save to accounts list
             let accounts = JSON.parse(localStorage.getItem('vibe_accounts') || '[]');
             accounts.push({ name, id, password });
             localStorage.setItem('vibe_accounts', JSON.stringify(accounts));
 
-            // Set current user
             currentUser = { name, id, password };
             localStorage.setItem('vibe_user', JSON.stringify(currentUser));
 
-            // Show generated credentials
             document.getElementById('generatedIdDisplay').innerText = id;
             document.getElementById('generatedPasswordDisplay').innerText = password;
             document.getElementById('createAccountForm').style.display = 'none';
@@ -356,7 +346,7 @@
             initPeer();
         }
 
-        // ----- Login -----
+        // ----- Dynamic Login Logic -----
         function login() {
             const name = document.getElementById('loginNameInput').value.trim();
             const id = document.getElementById('loginIdInput').value.trim();
@@ -365,15 +355,26 @@
             if (!name) return alert('Please enter your name');
             if (!id || !password) return alert('Please enter both ID and password');
 
-            const accounts = JSON.parse(localStorage.getItem('vibe_accounts') || '[]');
-            const account = accounts.find(a => a.id === id && a.password === password);
-            if (!account) {
-                return alert('Invalid ID or password');
-            }
+            // Calculate expected password for given ID
+            const expectedPassword = generatePassword(id);
 
-            currentUser = { name, id, password }; // use the name entered (any name allowed)
-            localStorage.setItem('vibe_user', JSON.stringify(currentUser));
-            initPeer();
+            // Check if Password is valid for this ID
+            if (expectedPassword !== "" && password === expectedPassword) {
+                let accounts = JSON.parse(localStorage.getItem('vibe_accounts') || '[]');
+                let existing = accounts.find(a => a.id === id);
+
+                // Auto-register account locally if not previously existing
+                if (!existing) {
+                    accounts.push({ name, id, password });
+                    localStorage.setItem('vibe_accounts', JSON.stringify(accounts));
+                }
+
+                currentUser = { name, id, password };
+                localStorage.setItem('vibe_user', JSON.stringify(currentUser));
+                initPeer();
+            } else {
+                alert('Invalid ID or Password! The password does not match this ID.');
+            }
         }
 
         // ----- Settings -----
@@ -386,7 +387,7 @@
             document.getElementById('settingsModal').style.display = 'none';
         }
 
-        // ----- PeerJS initialisation (existing logic) -----
+        // ----- PeerJS initialisation -----
         function initPeer() {
             if (peer) peer.destroy();
 
