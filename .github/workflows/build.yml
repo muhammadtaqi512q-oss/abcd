@@ -19,47 +19,36 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      - name: Build Cordova APK
+      - name: Install Cordova & Build APK with Icon
         run: |
           npm install -g cordova
           
           # 1. Create Cordova project
-          cordova create app com.lastwar2.taqi "LAST WAR 2"
+          cordova create app com.vibe7.nexura "VIBE PRO"
           
-          # 2. Copy Web Source Assets
-          cp -r index.html app/www/ 2>/dev/null || true
-          cp -r characters gun bg stage app/www/ 2>/dev/null || true
+          # 2. Copy ALL HTML and web files to www folder
+          cp *.html app/www/ 2>/dev/null || true
+          # Agar CSS, JS ya assets bhi hain to:
+          # cp -r css js images app/www/ 2>/dev/null || true
           
-          # 3. Add Custom Icon if present
+          # 3. Add Custom Icon to Config if icon.png exists
           if [ -f "icon.png" ]; then
             cp icon.png app/www/icon.png
-            sed -i '/<\/widget>/i \    <icon src="www/icon.png" \/>' app/config.xml
+            sed -i '/<\/widget>/i \    <icon src="www/icon.png" />' app/config.xml
           fi
           
-          # 4. Set Landscape Orientation in config.xml
-          sed -i '/<\/widget>/i \    <preference name="Orientation" value="landscape" \/>' app/config.xml
-
-          # 5. Add Android Platform & Build
+          # 4. Add Android Platform & Build
           cd app
           cordova platform add android
-          
-          # Fix Gradle executable permissions
-          if [ -d "platforms/android" ]; then
-            chmod +x platforms/android/gradlew || true
-          fi
-
           cordova build android --debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Stickman-Shooter-GAME
+          name: VIBE-APP-APK
           path: app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
