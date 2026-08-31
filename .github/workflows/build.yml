@@ -29,7 +29,7 @@ jobs:
           npm install -g cordova
           
           # 1. Create Cordova project
-          cordova create app com.vibe12.nexura "VIBE PRO"
+          cordova create app com.vibe20.nexura "VIBE PRO"
           
           # 2. Copy ALL HTML and web files to www folder
           cp *.html app/www/ 2>/dev/null || true
