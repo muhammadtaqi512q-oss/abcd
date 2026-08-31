@@ -76,6 +76,7 @@
         .msg-bubble.them { background: #ffffff; align-self: flex-start; border-top-left-radius: 0; }
         .msg-bubble img, .msg-bubble video { max-width: 100%; max-height: 250px; border-radius: 8px; margin-bottom: 4px; display: block; }
         .msg-time { font-size: 10px; color: #667781; text-align: right; margin-top: 2px; }
+        .msg-status { font-size: 10px; color: #8696a0; text-align: right; }
 
         .chat-footer { height: 62px; background: #f0f2f5; padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
         .message-input { flex: 1; padding: 11px 16px; border: none; border-radius: 8px; font-size: 14px; outline: none; background: #ffffff; }
@@ -252,14 +253,21 @@
         let contacts = [];
         let messagesDB = {};
         let activeFriendId = null;
+        // NEW: store pending messages that failed to send due to offline peer
+        let pendingOutbox = {}; // { friendId: [payload1, payload2, ...] }
+
+        // Retry interval for pending messages
+        let retryInterval = null;
 
         window.onload = function() {
             const savedUser = localStorage.getItem('vibe_user');
             const savedContacts = localStorage.getItem('vibe_contacts');
             const savedMessages = localStorage.getItem('vibe_messages');
+            const savedPending = localStorage.getItem('vibe_pending');
 
             if (savedContacts) contacts = JSON.parse(savedContacts);
             if (savedMessages) messagesDB = JSON.parse(savedMessages);
+            if (savedPending) pendingOutbox = JSON.parse(savedPending);
 
             if (savedUser) {
                 currentUser = JSON.parse(savedUser);
@@ -355,15 +363,12 @@
             if (!name) return alert('Please enter your name');
             if (!id || !password) return alert('Please enter both ID and password');
 
-            // Calculate expected password for given ID
             const expectedPassword = generatePassword(id);
 
-            // Check if Password is valid for this ID
             if (expectedPassword !== "" && password === expectedPassword) {
                 let accounts = JSON.parse(localStorage.getItem('vibe_accounts') || '[]');
                 let existing = accounts.find(a => a.id === id);
 
-                // Auto-register account locally if not previously existing
                 if (!existing) {
                     accounts.push({ name, id, password });
                     localStorage.setItem('vibe_accounts', JSON.stringify(accounts));
@@ -398,6 +403,9 @@
                 document.getElementById('myProfileName').innerText = currentUser.name;
                 document.getElementById('myProfileId').innerText = 'ID: ' + currentUser.id;
                 renderContacts();
+                // Start retry interval for pending messages
+                if (retryInterval) clearInterval(retryInterval);
+                retryInterval = setInterval(retryPendingMessages, 10000);
             });
 
             peer.on('connection', (conn) => {
@@ -419,9 +427,108 @@
                         }
                     }
                 });
+
+                // When a peer connects to us, try to send any pending messages for that peer
+                flushPendingMessages(incomingId);
             });
 
             peer.on('error', (err) => console.error('PeerJS Error:', err));
+        }
+
+        // ----- New function to flush pending messages for a specific friend -----
+        function flushPendingMessages(friendId) {
+            if (!pendingOutbox[friendId] || pendingOutbox[friendId].length === 0) return;
+            
+            const conn = connections[friendId];
+            if (!conn || !conn.open) {
+                // Try to establish connection if not exists
+                tryToConnect(friendId);
+                return;
+            }
+
+            // Send all pending messages
+            const pendingList = pendingOutbox[friendId];
+            for (const payload of pendingList) {
+                conn.send(payload);
+                // Mark message as sent in messagesDB
+                markMessageSent(friendId, payload);
+            }
+            // Clear pending after successful send
+            delete pendingOutbox[friendId];
+            savePendingOutbox();
+            renderContacts();
+        }
+
+        // ----- New function to attempt connection to a friend -----
+        function tryToConnect(friendId) {
+            if (connections[friendId] && connections[friendId].open) return;
+            if (friendId === currentUser.id) return;
+
+            const conn = peer.connect('vibe-' + friendId, { reliable: true });
+            connections[friendId] = conn;
+
+            conn.on('open', () => {
+                // Once connection is open, flush pending messages
+                flushPendingMessages(friendId);
+            });
+
+            conn.on('data', (data) => {
+                if (data.type === 'chat') {
+                    saveMessage(data.fromId, data.fromName, data.text, 'them', data.msgType, data.mediaUrl);
+                    if (!contacts.some(c => c.id === data.fromId)) {
+                        contacts.push({ name: data.fromName, id: data.fromId });
+                        localStorage.setItem('vibe_contacts', JSON.stringify(contacts));
+                        renderContacts();
+                    }
+                    if (activeFriendId === data.fromId) renderMessages();
+                }
+            });
+
+            conn.on('error', (err) => {
+                console.log('Connection error with', friendId, err);
+                delete connections[friendId]; // remove reference
+            });
+        }
+
+        // ----- New periodic retry function -----
+        function retryPendingMessages() {
+            const friendsWithPending = Object.keys(pendingOutbox);
+            for (const friendId of friendsWithPending) {
+                if (pendingOutbox[friendId].length > 0) {
+                    // If not connected, try to connect
+                    if (!connections[friendId] || !connections[friendId].open) {
+                        tryToConnect(friendId);
+                    } else {
+                        // If connected, flush
+                        flushPendingMessages(friendId);
+                    }
+                }
+            }
+        }
+
+        // ----- Mark a message as sent in messagesDB -----
+        function markMessageSent(friendId, payload) {
+            if (!messagesDB[friendId]) return;
+            // Find the message by matching time and type (we need a unique identifier; for simplicity we'll match the last pending message)
+            // Since payload doesn't have unique id, we match by text/mediaUrl and time stored in messagesDB
+            // In our saveMessage we store time string; we can use that to find and update
+            const timeStr = payload.time; // if we include time in payload
+            const list = messagesDB[friendId];
+            for (let i = list.length - 1; i >= 0; i--) {
+                const msg = list[i];
+                if (msg.type === 'me' && msg.msgType === payload.msgType && 
+                    (payload.msgType === 'text' ? msg.text === payload.text : msg.mediaUrl === payload.mediaUrl)) {
+                    // Update status to sent (we'll add a 'status' field)
+                    msg.status = 'sent';
+                    break;
+                }
+            }
+            localStorage.setItem('vibe_messages', JSON.stringify(messagesDB));
+        }
+
+        // ----- Save pending outbox to localStorage -----
+        function savePendingOutbox() {
+            localStorage.setItem('vibe_pending', JSON.stringify(pendingOutbox));
         }
 
         function openModal() { document.getElementById('addContactModal').style.display = 'flex'; }
@@ -457,6 +564,7 @@
                     if (last.msgType === 'image') lastMsg = '📷 Photo';
                     else if (last.msgType === 'video') lastMsg = '🎥 Video';
                     else lastMsg = last.text;
+                    if (last.status === 'pending') lastMsg += ' (pending)';
                 }
 
                 const item = document.createElement('div');
@@ -490,15 +598,7 @@
             document.getElementById('appLayout').classList.add('full-chat');
 
             if (!connections[friendId]) {
-                const conn = peer.connect('vibe-' + friendId, { reliable: true });
-                connections[friendId] = conn;
-
-                conn.on('data', (data) => {
-                    if (data.type === 'chat') {
-                        saveMessage(data.fromId, data.fromName, data.text, 'them', data.msgType, data.mediaUrl);
-                        if (activeFriendId === data.fromId) renderMessages();
-                    }
-                });
+                tryToConnect(friendId);
             }
 
             renderContacts();
@@ -520,21 +620,25 @@
                 fromId: currentUser.id,
                 text: text,
                 msgType: msgType,
-                mediaUrl: mediaUrl
+                mediaUrl: mediaUrl,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) // for matching later
             };
 
             const conn = connections[activeFriendId];
             if (conn && conn.open) {
                 conn.send(payload);
+                // Save as sent
+                saveMessage(activeFriendId, currentUser.name, text, 'me', msgType, mediaUrl, 'sent');
             } else {
-                const newConn = peer.connect('vibe-' + activeFriendId, { reliable: true });
-                connections[activeFriendId] = newConn;
-                newConn.on('open', () => {
-                    newConn.send(payload);
-                });
+                // Connection not open, save as pending and add to outbox
+                saveMessage(activeFriendId, currentUser.name, text, 'me', msgType, mediaUrl, 'pending');
+                if (!pendingOutbox[activeFriendId]) pendingOutbox[activeFriendId] = [];
+                pendingOutbox[activeFriendId].push(payload);
+                savePendingOutbox();
+                // Attempt to connect now
+                tryToConnect(activeFriendId);
             }
 
-            saveMessage(activeFriendId, currentUser.name, text, 'me', msgType, mediaUrl);
             if (msgType === 'text') input.value = '';
             renderMessages();
             renderContacts();
@@ -554,11 +658,11 @@
             e.target.value = '';
         }
 
-        function saveMessage(friendId, senderName, text, type, msgType = 'text', mediaUrl = null) {
+        function saveMessage(friendId, senderName, text, type, msgType = 'text', mediaUrl = null, status = 'sent') {
             if (!messagesDB[friendId]) messagesDB[friendId] = [];
 
             const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            messagesDB[friendId].push({ text, type, time, msgType, mediaUrl });
+            messagesDB[friendId].push({ text, type, time, msgType, mediaUrl, status });
             localStorage.setItem('vibe_messages', JSON.stringify(messagesDB));
         }
 
@@ -580,6 +684,9 @@
 
                 if (msg.text) contentHTML += `<div>${msg.text}</div>`;
                 contentHTML += `<div class="msg-time">${msg.time}</div>`;
+                if (msg.type === 'me' && msg.status === 'pending') {
+                    contentHTML += `<div class="msg-status">⏳ Pending</div>`;
+                }
 
                 div.innerHTML = contentHTML;
                 container.appendChild(div);
@@ -606,6 +713,11 @@
 
                 delete messagesDB[activeFriendId];
                 localStorage.setItem('vibe_messages', JSON.stringify(messagesDB));
+
+                if (pendingOutbox[activeFriendId]) {
+                    delete pendingOutbox[activeFriendId];
+                    savePendingOutbox();
+                }
 
                 activeFriendId = null;
                 document.getElementById('activeChatView').style.display = 'none';
