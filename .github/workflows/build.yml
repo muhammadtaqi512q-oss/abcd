@@ -32,8 +32,7 @@ jobs:
           cordova create app com.vibe20.nexura "VIBE PRO"
           
           # 2. Copy ALL HTML and web files to www folder
-          cp *.html app/www/ 2>/dev/null || true
-          # Agar CSS, JS ya assets bhi hain to:
+          cp -r *.html *.png *.jpg *.jpeg *.css *.js app/www/ 2>/dev/null || true
           # cp -r css js images app/www/ 2>/dev/null || true
           
           # 3. Add Custom Icon to Config if icon.png exists
