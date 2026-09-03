@@ -1,11 +1,10 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ROYAL - Gaming Portal by mt</title>
-      <link rel="icon" type="image/png" href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQAJKWwOy-xFlZ8W-S_UyDOCbjo2Ufo8YEUlmCXhaOtCQ&s=10">
+    <link rel="icon" type="image/png" href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQAJKWwOy-xFlZ8W-S_UyDOCbjo2Ufo8YEUlmCXhaOtCQ&s=10">
     <style>
         * {
             margin: 0;
@@ -20,29 +19,32 @@
                 radial-gradient(circle at 20% 20%, rgba(212, 175, 55, 0.08) 0%, transparent 40%),
                 radial-gradient(circle at 80% 80%, rgba(212, 175, 55, 0.08) 0%, transparent 40%);
             color: #fff;
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
+            padding: 20px 15px; /* Mobile par spacing dene ke liye */
+            overflow-y: auto;   /* Scrollbar enable karne ke liye */
         }
 
         /* Luxury Container Card */
         .royal-container {
             background: rgba(18, 18, 18, 0.85);
             border: 2px solid #d4af37;
-            padding: 40px 50px;
+            padding: 30px 20px;
             border-radius: 20px;
             box-shadow: 0 0 35px rgba(212, 175, 55, 0.25), inset 0 0 15px rgba(212, 175, 55, 0.1);
             text-align: center;
-            width: 420px;
+            width: 100%;
+            max-width: 420px; /* Mobile par screen se bahar nahi jayega */
             backdrop-filter: blur(10px);
+            margin: auto;
         }
 
         /* Branding */
         .brand-title {
-            font-size: 2.8rem;
+            font-size: 2.5rem;
             font-weight: 900;
             letter-spacing: 4px;
             background: linear-gradient(135deg, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c);
@@ -53,22 +55,22 @@
         }
 
         .creator-tag {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: #d4af37;
-            letter-spacing: 3px;
+            letter-spacing: 2px;
             text-transform: uppercase;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
             font-weight: 600;
             border-bottom: 1px solid rgba(212, 175, 55, 0.3);
             display: inline-block;
-            padding-bottom: 8px;
+            padding-bottom: 6px;
         }
 
         /* Modern Buttons Layout */
         .btn-group {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 12px;
         }
 
         .royal-btn {
@@ -76,8 +78,8 @@
             background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
             color: #fcf6ba;
             border: 1px solid #d4af37;
-            padding: 14px 20px;
-            font-size: 1.05rem;
+            padding: 14px 15px;
+            font-size: 0.95rem;
             font-weight: 600;
             border-radius: 10px;
             cursor: pointer;
@@ -89,6 +91,7 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
+            text-transform: uppercase;
         }
 
         /* Gold Glow Effect on Hover */
@@ -107,16 +110,11 @@
             left: 100%;
         }
 
-        .royal-btn:hover {
+        .royal-btn:hover, .royal-btn:active {
             background: linear-gradient(135deg, #d4af37, #aa771c);
             color: #000;
             border-color: #fff;
             box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
-            transform: translateY(-2px);
-        }
-
-        .royal-btn:active {
-            transform: translateY(1px);
         }
 
         /* Subtle Footer */
@@ -139,18 +137,13 @@
             <a href="4.html" class="royal-btn">LUDO</a>
             <a href="3.html" class="royal-btn">HILL CLIMB RACING</a>
             <a href="5.html" class="royal-btn">TETRIS</a>
-            <a href="6.html" class="royal-btn">STONE PAPER SEASOR</a>
+            <a href="6.html" class="royal-btn">STONE PAPER SCISSORS</a>
             <a href="7.html" class="royal-btn">Stickman Sniper / Sharpshooter</a>
-           
             <a href="9.html" class="royal-btn">SNAKE GAME</a>
             <a href="10.html" class="royal-btn">FLAPPY BIRD</a>
-
             <a href="vs.html" class="royal-btn">2 PLAYERS GAME</a>
-
- <a href="8.html" class="royal-btn">NEXURA</a>
-            <a href="8.html" class="royal-btn">owner web</a>
-
-
+            <a href="8.html" class="royal-btn">NEXURA</a>
+            <a href="8.html" class="royal-btn">OWNER WEB</a>
         </div>
 
         <div class="footer-note">EXQUISITE GAMING EXPERIENCE</div>
